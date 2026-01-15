@@ -1,6 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { execSync } from 'child_process';
-import { extractText, getIssueKeyFromBranch, resolveKey } from './utils.js';
+import {
+  extractText,
+  formatTime,
+  getIssueKeyFromBranch,
+  getStartDate,
+  resolveKey,
+} from './utils.js';
 
 // Mocking External Dependencies
 vi.mock('child_process', () => ({
@@ -99,5 +105,75 @@ describe('extractText()', () => {
       ],
     };
     expect(extractText(deeplyNested)).toBe('Deep Logic');
+  });
+});
+
+describe('formatTime() - Jira Style', () => {
+  it('should format 1 hour correctly', () => {
+    expect(formatTime(3600)).toBe('1h');
+  });
+
+  it('should convert 8 hours to 1 day', () => {
+    expect(formatTime(28800)).toBe('1d');
+  });
+
+  it('should convert 40 hours to 1 week', () => {
+    expect(formatTime(144000)).toBe('1w');
+  });
+
+  it('should handle complex combinations', () => {
+    // 1w (144000) + 1d (28800) + 1h (3600) + 30m (1800) = 178200
+    expect(formatTime(178200)).toBe('1w 1d 1h 30m');
+  });
+});
+
+describe('getStartDate', () => {
+  beforeEach(() => {
+    // Lock the "current time" to Monday, May 12, 2025
+    // This allows us to predict the "start of week" and "start of month" exactly.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-05-12T10:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return the start of today (midnight) when no options are provided', () => {
+    const result = getStartDate({});
+
+    // Check that hours are zeroed out in LOCAL time
+    expect(result.getHours()).toBe(0);
+    expect(result.getMinutes()).toBe(0);
+
+    // Check that the date matches the mocked 'today'
+    const expectedDate = new Date('2025-05-12T10:00:00Z');
+    expect(result.getDate()).toBe(expectedDate.getDate());
+    expect(result.getMonth()).toBe(expectedDate.getMonth());
+  });
+
+  it('should return the first day of the current month when month option is true', () => {
+    const result = getStartDate({ month: true });
+    // May 1st, 2025
+    expect(result.getFullYear()).toBe(2025);
+    expect(result.getMonth()).toBe(4); // May is index 4
+    expect(result.getDate()).toBe(1);
+  });
+
+  it('should return the most recent Monday when week option is true', () => {
+    // Our fake system time is already a Monday (May 12)
+    const result = getStartDate({ week: true });
+    expect(result.getDate()).toBe(12);
+    expect(result.getDay()).toBe(1); // 1 = Monday
+  });
+
+  it('should correctly find Monday if today is Sunday', () => {
+    // Set time to Sunday, May 18, 2025
+    vi.setSystemTime(new Date('2025-05-18T10:00:00Z'));
+
+    const result = getStartDate({ week: true });
+    // Should go back to Monday, May 12
+    expect(result.getDate()).toBe(12);
+    expect(result.getMonth()).toBe(4);
   });
 });

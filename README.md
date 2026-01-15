@@ -85,6 +85,7 @@ jira i PROJ-99
 | `jira log 45m`         | `jira l`    | Log 45m to the current ticket.      |
 | `jira log 1h -c "..."` | `jira l`    | Log time with a specific comment.   |
 | `jira report`          | `jira r`    | Show total hours logged today.      |
+| `jira report -m`       | `jira r -w` | Show total hours logged this week.  |
 | `jira report -m`       | `jira r -m` | Show total hours logged this month. |
 
 ---
