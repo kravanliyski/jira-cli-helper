@@ -1,113 +1,156 @@
 # 🚀 Jira CLI Helper
 
-A lightning-fast, Git-aware CLI tool for managing Jira tickets directly from your terminal.
-
-This tool automatically detects the Jira ticket ID from your current Git branch (e.g., `feature/TASK-123`), saving you from manually searching for or copy-pasting ticket numbers.
+A high-performance, Git-aware CLI tool designed to eliminate the friction of managing Jira tickets. Instead of switching to your browser, manage your workflow directly from your terminal.
 
 ---
 
-## ✨ Features
+## 💡 Why use this?
 
-* **Git Integration**: Automatically detects ticket IDs from your current branch name.
-* **Time Tracking**: Log work (e.g., `1h 30m`) and view daily/monthly time reports.
-* **Smart Comments**: Post rich-text comments with automatic clickable link detection.
-* **Workflow Automation**: Move tickets and update required fields like "Affected Area."
-* **Quick Context**: Open tickets in the browser or view worklog history instantly.
+* **Context Awareness**: The tool reads your current Git branch name (e.g., `feature/PROJ-123`) to automatically target the correct ticket.
+* **Smart Transitions**: Move tickets through workflows using simple aliases like `jira s cr` instead of hunting through dropdown menus.
+* **Speed**: Log time, add comments, and check your "To Do" list in seconds, not minutes.
 
 ---
 
-## 🛠️ Installation
+## 🛠️ Installation & Setup
 
-1.  **Clone and Install**:
-    git clone <your-repo-url>
-    cd jira-cli-ts
-    npm install
+### 1. Install
+```bash
+git clone https://github.com/kravanliyski/jira-cli-helper.git
+cd jira-cli-helper
+npm install
+npm run build
+npm link
+```
+---
 
-2.  **Build and Link**:
-    npm run build
-    npm link
+### 2. Configure
+```bash
+jira setup
+```
+_You will be prompted for your Jira Base URL, Email, and an API Token._
+
+---
+### 3. Command Reference
+
+
+### 📋 Task Management
+
+| Command        | Alias   | Description |
+|----------------|---------|-------------|
+| `jira mine`    | `jira m` | List all open tasks assigned to you. |
+| `jira info`    | `jira i` | Show summary and status (auto-detects from branch). |
+| `jira open`    | `jira o` | Instantly open the ticket in your default browser. |
 
 ---
 
-## ⚙️ Configuration
+### ⏱️ Time Tracking & Reporting
 
-Run the setup command to connect the CLI to your Jira instance:
-
-    jira setup
-
-**Setup Prompts:**
-* **Jira URL**: Your instance URL (e.g., `https://company.atlassian.net`).
-* **Email**: Your Jira login email address.
-* **API Token**: Generate a token at Atlassian's security settings.
+| Command                     | Alias        | Description |
+|-----------------------------|--------------|-------------|
+| `jira log 45m`              | `jira l`     | Log 45m to the current ticket. |
+| `jira log 1h -c "..."`      | `jira l`     | Log time with a specific comment. |
+| `jira report`               | `jira r`     | Show total hours logged today. |
+| `jira report -m`            | `jira r -m`  | Show total hours logged this month. |
 
 ---
 
-## 📖 Usage Guide
+### 💬 Communication & Workflow
 
-Most commands automatically detect the ticket ID if you are inside a Git repository. You can always override this by passing a specific ID.
+| Command                | Alias     | Description |
+|------------------------|-----------|-------------|
+| `jira comment "..."`   | `jira c`  | Add a comment (links are automatically clickable). |
+| `jira status review`  | `jira s`  | Transition ticket (e.g., to "In Review"). |
+| `jira worklogs`       | `jira wl` | See a table of who logged time on a ticket. |
+| `jira options`        | `jira opt`| List all available transitions for the current ticket. |
 
-### 1. View Ticket Info
-Show the summary and current status.
 
-    # Auto-detects from branch
-    jira i
 
-    # Explicit ticket override
-    jira i TASK-123
+###  Pro-Tips for Workflows
 
-### 2. Open in Browser
-Instantly opens the ticket in your default browser.
+### 📂 Folder Integration
+You don’t need to be in the project folder to use this tool. Once linked, you can run it inside any of your work repositories.
 
-    jira o
+If your branch is named `feature/PROJ-123`, simply typing `jira i` will pull data for `PROJ-123`.
 
-### 3. Log Work (Time Tracking)
-Log time against a ticket.
-
-    # Log 45 minutes
-    jira l 45m
-
-    # Log with a comment
-    jira l 1h 30m -c "Refactored API"
-
-### 4. Time Reports
-See your total logged hours.
-
-    # Today's total
-    jira r
-
-    # Current month's total
-    jira r -m
-
-### 5. Add Comments
-Add a comment. URLs in the text will be made clickable automatically.
-
-    jira c "Reviewing PR: https://github.com/company/repo/pull/1"
-
-### 6. Worklog History
-See a table of who has logged time on a ticket and their descriptions.
-
-    jira wl
-
-### 7. Change Status (Transitions)
-Move a ticket to a new state.
-
-    jira s review   # Move to "In Review" or "Code Review"
-
-> **Note**: If a transition requires mandatory fields, the CLI will enter "Rescue Mode" to guide you through selection.
-
----
 
 ## 🔧 Customization
 
-### Aliases
-Create shortcuts for long status names:
+### Status Aliases
+Map short names to your specific Jira workflow states:
 
-    jira alias add cr "Code Review"
-    jira s cr  # Executes the move to Code Review
+```bash
+# Example: Map 'cr' to your company's 'Code Review' status
+jira alias add cr "Code Review"
 
-### Field Scanning
-Find internal IDs for custom fields in your Jira project:
+# Use it
+jira s cr
+```
 
-    jira scan "Affected Area"
+### Shell Aliases (Optional)
+To make your workflow even faster, you can add shortcuts to your shell profile `(~/.zshrc or ~/.bashrc)`:
+```bash
+# Add these to your shell config
+alias jm='jira mine'
+alias ji='jira info'
+alias js='jira status'
+alias jl='jira log'
+```
+
+### Affected Area (Rescue Mode)
+If your Jira project requires a mandatory field (such as **Affected Area**) during a transition, the CLI enters **Rescue Mode**, allowing you to select the correct component interactively.
 
 ---
+
+## 🔄 Updating
+
+When new features are released, update your local version with:
+
+```bash
+git pull
+npm run build
+```
+---
+
+## 👩‍💻 Local Development
+
+If you want to modify the code or add new features locally:
+
+1. **Enable Watch Mode**  
+   This will automatically rebuild the project whenever you save a file:
+
+```bash
+   npm run build -- --watch
+```
+
+## Test Changes Instantly
+
+Since you've already run `npm link`, any changes you save will be reflected immediately when you run the `jira` command in your terminal.
+
+## Code Structure
+
+- `src/index.ts`: The entry point and CLI command definitions.
+- `src/jiraClient.ts`: Jira API client configuration.
+- `src/config.ts`: Logic for handling local storage and credentials.
+
+
+
+## 🤝 Contributing & Pull Requests
+
+Contributions are welcome! If you have a feature request or a bug fix:
+
+- **Fork the Repository**: Create your own copy of the project.
+- **Create a Branch**: Use a descriptive name, e.g.,
+
+```bash
+   git checkout -b feat/add-delete-command
+```
+- **Commit Your Changes**: Follow clear commit messaging.
+- **Push & Open a PR:** Push to your fork and submit a Pull Request to the main branch.
+
+### 🔒 Security & Privacy
+
+- **Local Storage**: Your API token and credentials are stored securely on your local machine in your home directory (using `conf`). They are never uploaded or shared.
+- **Permissions**: The MIT License ensures you have full control over the code.
+
+
