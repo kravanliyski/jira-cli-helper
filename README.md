@@ -183,9 +183,11 @@ Contributions are welcome! If you have a feature request or a bug fix:
 
 - **Commit Your Changes**: Follow clear commit messaging.
 - **Test are passing**: Ensure all existing tests pass and add new tests if necessary.
+
 ```bash
    npm test
 ```
+
 - **Push & Open a PR:** Push to your fork and submit a Pull Request to the main branch.
 
 ### 🔒 Security & Privacy
