@@ -53,7 +53,8 @@ export const extractText = (node: unknown): string => {
 
   if (Array.isArray(n.content)) {
     // Change .join(' ') to .join('')
-    return n.content.map(extractText).join('');
+    return n.content.map(extractText)
+        .join('');
   }
   return '';
 };
