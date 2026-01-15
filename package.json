@@ -10,7 +10,11 @@
   "scripts": {
     "start": "node --loader ts-node/esm src/index.ts",
     "build": "tsup",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "fix": "npm run format && npm run lint -- --fix"
   },
   "author": "Your Personal Name <your-personal-email@gmail.com>",
   "license": "MIT",
@@ -28,10 +32,16 @@
     "open": "^10.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.0.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.53.0"
   }
 }
