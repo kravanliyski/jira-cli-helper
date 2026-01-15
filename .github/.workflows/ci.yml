@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint & Format
+        # Run both; if either fails, the CI fails
+        run: |
+          npm run lint
+          npm run format:check
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+
+      - name: Build check
+        # Ensures that your tsup build still works with the new changes
+        run: npm run build
