@@ -75,8 +75,46 @@ export const calculateTotalSeconds = (
   return total;
 };
 
-export const formatTime = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
+export const formatTime = (seconds: number): string => {
+  const totalMinutes = Math.floor(seconds / 60);
+  const m = totalMinutes % 60;
+  const totalHours = Math.floor(totalMinutes / 60);
+
+  // Jira standard: 8h = 1d, 5d = 1w
+  const totalDays = Math.floor(totalHours / 8);
+  const w = Math.floor(totalDays / 5);
+  const d = totalDays % 5;
+  const h = totalHours % 8;
+
+  const parts = [];
+  if (w > 0) parts.push(`${w}w`);
+  if (d > 0) parts.push(`${d}d`);
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0 || parts.length === 0) parts.push(`${m}m`);
+
+  return parts.join(' ');
+};
+
+export const getStartDate = (options: {
+  month?: boolean;
+  week?: boolean;
+}): Date => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Normalize to start of day
+
+  if (options.month) {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  if (options.week) {
+    const currentDay = now.getDay(); // 0 = Sun, 1 = Mon
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - daysFromMonday,
+    );
+  }
+
+  return now;
 };

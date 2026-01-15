@@ -22,7 +22,7 @@ describe('Time Reporting Logic', () => {
 
     const total = calculateTotalSeconds(mockLogs, myId, today);
     expect(total).toBe(3600);
-    expect(formatTime(total)).toBe('1h 0m');
+    expect(formatTime(total)).toBe('1h');
   });
 
   it('should ignore logs from before the start date', () => {
@@ -40,6 +40,6 @@ describe('Time Reporting Logic', () => {
 
   it('should correctly format complex totals (e.g., 90 minutes)', () => {
     expect(formatTime(5400)).toBe('1h 30m');
-    expect(formatTime(450)).toBe('0h 7m');
+    expect(formatTime(450)).toBe('7m');
   });
 });

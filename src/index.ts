@@ -17,6 +17,7 @@ import {
   calculateTotalSeconds,
   extractText,
   formatTime,
+  getStartDate,
   resolveKey,
 } from './utils.js';
 
@@ -436,27 +437,19 @@ program
 program
   .command('report')
   .alias('r')
-  .description('Show hours logged (Default: Today. Use -m for Month)')
+  .description(
+    'Show hours logged (Default: Today. Use -w for Week, -m for Month)',
+  )
+  .option('-w, --week', 'Show stats for the current week')
   .option('-m, --month', 'Show stats for the current month')
-  .action(async (options: { month?: boolean }) => {
+  .action(async (options: { month?: boolean; week?: boolean }) => {
     try {
       const client = getJiraClient();
       const myself = await client.myself.getCurrentUser();
-      const myAccountId = myself.accountId;
+      const myAccountId = myself.accountId!;
 
-      // Ensure we have an ID to compare against
-      if (!myAccountId) {
-        throw new Error('Could not retrieve your Jira Account ID.');
-      }
-
-      const now = new Date();
-      const mode = options.month ? 'Month' : 'Today';
-
-      // Determine Start Date
-      const startDate = options.month
-        ? new Date(now.getFullYear(), now.getMonth(), 1)
-        : new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
+      const startDate = getStartDate(options);
+      const mode = options.month ? 'Month' : options.week ? 'Week' : 'Today';
       const jqlDate = startDate.toISOString().split('T')[0];
 
       console.log(chalk.blue(`Fetching worklogs for [${mode}]...`));
@@ -465,30 +458,18 @@ program
         await client.issueSearch.searchForIssuesUsingJqlEnhancedSearch({
           jql: `worklogAuthor = currentUser() AND worklogDate >= "${jqlDate}"`,
           fields: ['worklog'],
-          maxResults: 100,
         });
 
-      if (!search.issues || search.issues.length === 0) {
-        console.log(chalk.yellow(`No worklogs found for ${mode}.`));
-        return;
-      }
-
       let totalSeconds = 0;
-
       await Promise.all(
-        (search.issues || []).map(async (issue: Version3Models.Issue) => {
-          let logs: Version3Models.Worklog[] =
-            issue.fields.worklog?.worklogs || [];
-          const totalLogs = issue.fields.worklog?.total || 0;
-
-          // Fetch full logs if paginated
-          if (totalLogs > logs.length && issue.id) {
-            const fullLogReq = await client.issueWorklogs.getIssueWorklog({
+        (search.issues || []).map(async (issue) => {
+          let logs = issue.fields.worklog?.worklogs || [];
+          if ((issue.fields.worklog?.total || 0) > logs.length && issue.id) {
+            const full = await client.issueWorklogs.getIssueWorklog({
               issueIdOrKey: issue.id,
             });
-            logs = fullLogReq.worklogs || [];
+            logs = full.worklogs || [];
           }
-
           totalSeconds += calculateTotalSeconds(logs, myAccountId, startDate);
         }),
       );
@@ -498,9 +479,8 @@ program
           `\n⏱️  Total [${mode}]: ${chalk.green(formatTime(totalSeconds))}`,
         ),
       );
-    } catch (error: unknown) {
-      const err = error as JiraError;
-      console.error(chalk.red('Error generating report:'), err.message || err);
+    } catch (error) {
+      console.error(chalk.red('Error:'), error);
     }
   });
 
