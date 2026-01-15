@@ -139,27 +139,17 @@ If your Jira project requires a mandatory field (such as **Affected Area**) duri
 
 ---
 
-## 🔄 Updating
+### 🔄 How to Update
 
-When new features are released, update your local version with:
+This tool can self-update. To pull the latest features (like the new week mode) and rebuild:
 
 ```bash
-git pull
-npm run build
+jira self-update
+#alias version
+jira su
 ```
 
 ---
-
-## 👩‍💻 Local Development
-
-If you want to modify the code or add new features locally:
-
-1. **Enable Watch Mode**  
-   This will automatically rebuild the project whenever you save a file:
-
-```bash
-   npm run build -- --watch
-```
 
 ## Test Changes Instantly
 
