@@ -141,7 +141,7 @@ If your Jira project requires a mandatory field (such as **Affected Area**) duri
 
 ### 🔄 How to Update
 
-This tool can self-update. To pull the latest features (like the new week mode) and rebuild:
+This tool can self-update. To pull the latest features and rebuild:
 
 ```bash
 jira self-update
