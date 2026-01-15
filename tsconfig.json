@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2022",              // Changed from ES2020
-    "module": "NodeNext",            // Changed from commonjs
-    "moduleResolution": "NodeNext",  // Vital for ESM
+    "target": "ES2022", // Changed from ES2020
+    "module": "NodeNext", // Changed from commonjs
+    "moduleResolution": "NodeNext", // Vital for ESM
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
