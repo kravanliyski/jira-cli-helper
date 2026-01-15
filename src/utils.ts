@@ -121,7 +121,6 @@ export const getStartDate = (options: {
   return now;
 };
 
-
 export const selfUpdate = (): void => {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -140,6 +139,8 @@ export const selfUpdate = (): void => {
 
     console.log(chalk.green.bold('\n✅ Update complete!'));
   } catch (error) {
-    throw new Error(`Update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 };

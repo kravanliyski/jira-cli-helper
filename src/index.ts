@@ -18,7 +18,8 @@ import {
   extractText,
   formatTime,
   getStartDate,
-  resolveKey, selfUpdate,
+  resolveKey,
+  selfUpdate,
 } from './utils.js';
 
 const program = new Command();
@@ -706,15 +707,15 @@ program
 
 //Update Command
 program
-    .command('self-update')
-    .alias('su')
-    .description('Pull latest changes, install dependencies, and rebuild')
-    .action(() => {
-      try {
-        selfUpdate();
-      } catch (error) {
-        console.error(chalk.red('Update Error:'), error);
-      }
-    });
+  .command('self-update')
+  .alias('su')
+  .description('Pull latest changes, install dependencies, and rebuild')
+  .action(() => {
+    try {
+      selfUpdate();
+    } catch (error) {
+      console.error(chalk.red('Update Error:'), error);
+    }
+  });
 
 program.parse(process.argv);
