@@ -56,7 +56,7 @@ While the tool is "Git-aware," it does not require a Git repository to function.
 #Logs 1 hour and 30 minutes to TASK-1 with a comment
 jira l Task-1 1h 30m -c "Testing new feature"
 # Open the ticket TASK-1 in your browser
-jira i PROJ-99
+jira o PROJ-99
 ```
 
 **Logic Flow:**
