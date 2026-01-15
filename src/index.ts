@@ -2,18 +2,24 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import open from 'open';
-import { execSync } from 'child_process';
 import {
-  saveCreds,
+  getAffectedFieldId,
   getAliases,
+  getCreds,
   removeAlias,
   saveAlias,
+  saveCreds,
   setAffectedFieldId,
-  getAffectedFieldId,
-  getCreds,
 } from './config.js';
 import { getJiraClient } from './jiraClient.js';
 import { Version3Models } from 'jira.js';
+import {
+  calculateTotalSeconds,
+  extractText,
+  formatTime,
+  resolveKey,
+} from './utils.js';
+
 const program = new Command();
 
 program.version('1.0.0').description('Jira CLI Helper');
@@ -32,41 +38,6 @@ const DEFAULT_ALIASES: Record<string, string> = {
   review: 'Code Review',
   cr: 'Code Review',
   done: 'Done',
-};
-
-// --- HELPER: Detect Ticket from Git Branch ---
-const getIssueKeyFromBranch = (): string | null => {
-  try {
-    const branchName = execSync('git rev-parse --abbrev-ref HEAD', {
-      stdio: 'pipe',
-    })
-      .toString()
-      .trim();
-    const match = branchName.match(/([A-Z]+-\d+)/);
-    if (match && match[1]) {
-      return match[1];
-    }
-  } catch (_e) {
-    // Not a git repo - ignore error
-  }
-  return null;
-};
-
-// --- HELPER: Resolve Key (User Input vs Git) ---
-const resolveKey = (userInput?: string): string => {
-  if (userInput && userInput.match(/[A-Z]+-\d+/i)) {
-    return userInput.toUpperCase();
-  }
-  const gitKey = getIssueKeyFromBranch();
-  if (gitKey) {
-    console.log(
-      chalk.dim(`🎯 Detected ticket from branch: ${chalk.bold(gitKey)}`),
-    );
-    return gitKey;
-  }
-  throw new Error(
-    'Could not detect Issue Key. Please provide it explicitly (e.g. "TASK-123") or run inside a Git branch.',
-  );
 };
 
 // --- 1. SETUP COMMAND ---
@@ -473,15 +444,18 @@ program
       const myself = await client.myself.getCurrentUser();
       const myAccountId = myself.accountId;
 
+      // Ensure we have an ID to compare against
+      if (!myAccountId) {
+        throw new Error('Could not retrieve your Jira Account ID.');
+      }
+
       const now = new Date();
       const mode = options.month ? 'Month' : 'Today';
 
-      let startDate: Date;
-      if (options.month) {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      } else {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      }
+      // Determine Start Date
+      const startDate = options.month
+        ? new Date(now.getFullYear(), now.getMonth(), 1)
+        : new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       const jqlDate = startDate.toISOString().split('T')[0];
 
@@ -503,12 +477,11 @@ program
 
       await Promise.all(
         (search.issues || []).map(async (issue: Version3Models.Issue) => {
-          // 1. Properly type the logs and total
           let logs: Version3Models.Worklog[] =
             issue.fields.worklog?.worklogs || [];
           const totalLogs = issue.fields.worklog?.total || 0;
 
-          // 2. Fetch full logs if they are paginated/truncated
+          // Fetch full logs if paginated
           if (totalLogs > logs.length && issue.id) {
             const fullLogReq = await client.issueWorklogs.getIssueWorklog({
               issueIdOrKey: issue.id,
@@ -516,27 +489,9 @@ program
             logs = fullLogReq.worklogs || [];
           }
 
-          // 3. Process each log with the correct Worklog type
-          logs.forEach((log: Version3Models.Worklog) => {
-            // Use optional chaining for the accountId check
-            if (log.author?.accountId !== myAccountId) return;
-
-            // Ensure started exists before creating a Date
-            if (log.started) {
-              const logDate = new Date(log.started);
-              if (logDate >= startDate) {
-                totalSeconds += log.timeSpentSeconds || 0;
-              }
-            }
-          });
+          totalSeconds += calculateTotalSeconds(logs, myAccountId, startDate);
         }),
       );
-
-      const formatTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        return `${h}h ${m}m`;
-      };
 
       console.log(
         chalk.bold(
@@ -581,24 +536,17 @@ program
 
       let totalSeconds = 0;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const extractText = (node: any): string => {
-        if (!node) return '';
-        if (typeof node === 'string') return node;
-        if (node.text) return node.text;
-        if (node.content && Array.isArray(node.content)) {
-          return node.content.map(extractText).join(' ');
-        }
-        return '';
-      };
-
       logs.forEach((log: Version3Models.Worklog) => {
+        // 1. Handle Date
         const date = log.started
           ? new Date(log.started).toISOString().split('T')[0]
           : 'Unknown   ';
+
+        // 2. Handle metadata
         const author = (log.author?.displayName || 'Unknown').substring(0, 15);
         const time = log.timeSpent || '0m';
 
+        // 3. Use shared extractText utility
         let desc = extractText(log.comment).trim();
         desc = desc.replace(/\n/g, ' ');
         if (desc.length > 40) desc = desc.substring(0, 37) + '...';
@@ -613,11 +561,8 @@ program
         );
       });
 
-      const h = Math.floor(totalSeconds / 3600);
-      const m = Math.floor((totalSeconds % 3600) / 60);
-
       console.log(chalk.dim('-'.repeat(80)));
-      console.log(`Total: ${chalk.green.bold(`${h}h ${m}m`)}`);
+      console.log(`Total: ${chalk.green.bold(formatTime(totalSeconds))}`);
     } catch (error: unknown) {
       const err = error as JiraError;
       console.error(chalk.red('Error:'), err.message || err);
