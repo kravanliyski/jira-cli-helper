@@ -14,6 +14,14 @@ A high-performance, Git-aware CLI tool designed to eliminate the friction of man
 
 ## 🛠️ Installation & Setup
 
+### Prerequisites
+Before installing, ensure you have the following:
+* **Node.js**: Version 18.x or higher (check with `node -v`).
+* **NPM**: Version 9.x or higher.
+* **Jira API Token**: You need an API token to authenticate.
+   * [Generate one here](https://id.atlassian.com/manage-profile/security/api-tokens).
+* **Git**: Installed and configured in your path.
+
 ### 1. Install
 ```bash
 git clone https://github.com/kravanliyski/jira-cli-helper.git
@@ -29,6 +37,23 @@ npm link
 jira setup
 ```
 _You will be prompted for your Jira Base URL, Email, and an API Token._
+
+## 🎯 Manual Overrides (Non-Git Usage)
+
+While the tool is "Git-aware," it does not require a Git repository to function. You can explicitly target any ticket by passing the Jira Key as the first argument.
+
+### Examples:
+* **Log time to a specific ticket**:
+```bash
+#Logs 1 hour and 30 minutes to TASK-1 with a comment
+jira l Task-1 1h 30m -c "Testing new feature"
+# Open the ticket TASK-1 in your browser
+jira i PROJ-99
+```
+**Logic Flow:**
+
+1. If a **Key** is provided (e.g., `TASK-1`), the tool uses that.
+2. If no **Key** is provided, the tool looks for a **Jira ID** in your Git branch name.
 
 ---
 ### 3. Command Reference
