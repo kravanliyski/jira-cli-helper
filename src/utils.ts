@@ -76,7 +76,20 @@ export const calculateTotalSeconds = (
 };
 
 export const formatTime = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
+  const totalHours = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
+
+  // Jira uses 8-hour workdays and 5-day workweeks by default
+  const totalDays = Math.floor(totalHours / 8);
+  const w = Math.floor(totalDays / 5);
+  const d = totalDays % 5;
+  const h = totalHours % 8;
+
+  const parts = [];
+  if (w > 0) parts.push(`${w}w`);
+  if (d > 0) parts.push(`${d}d`);
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+
+  return parts.length > 0 ? parts.join(' ') : '0m';
 };

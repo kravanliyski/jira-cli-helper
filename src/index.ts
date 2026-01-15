@@ -436,9 +436,12 @@ program
 program
   .command('report')
   .alias('r')
-  .description('Show hours logged (Default: Today. Use -m for Month)')
+  .description(
+    'Show hours logged (Default: Today. Use -w for Week, -m for Month)',
+  )
+  .option('-w, --week', 'Show stats for the current week')
   .option('-m, --month', 'Show stats for the current month')
-  .action(async (options: { month?: boolean }) => {
+  .action(async (options: { month?: boolean; week?: boolean }) => {
     try {
       const client = getJiraClient();
       const myself = await client.myself.getCurrentUser();
@@ -450,12 +453,33 @@ program
       }
 
       const now = new Date();
-      const mode = options.month ? 'Month' : 'Today';
+
+      // Determine mode based on options
+      let mode: string;
+      if (options.month) {
+        mode = 'Month';
+      } else if (options.week) {
+        mode = 'Week';
+      } else {
+        mode = 'Today';
+      }
 
       // Determine Start Date
-      const startDate = options.month
-        ? new Date(now.getFullYear(), now.getMonth(), 1)
-        : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      let startDate: Date;
+      if (options.month) {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (options.week) {
+        // Calculate start of week (Monday)
+        const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - daysFromMonday,
+        );
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
 
       const jqlDate = startDate.toISOString().split('T')[0];
 
