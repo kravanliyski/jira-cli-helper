@@ -99,6 +99,20 @@ jira o PROJ-99
 | `jira worklogs`      | `jira wl`  | See a table of who logged time on a ticket.            |
 | `jira options`       | `jira opt` | List all available transitions for the current ticket. |
 
+### 🧩 Custom Fields
+
+| Command                       | Alias | Description                                           |
+| ----------------------------- | ----- | ----------------------------------------------------- |
+| `jira scan <keyword>`         | —     | Search Jira for field IDs matching the given keyword. |
+| `jira field:add <alias> <id>` | —     | Save a custom field and map it to a friendly alias.   |
+| `jira field:list`             | —     | List all configured custom fields.                    |
+| `jira field:remove <alias>`   | —     | Remove a custom field from the local configuration.   |
+
+**Notes:**
+
+- Custom fields automatically appear in the **Details** section of `jira info`
+- Field values are rendered with smart formatting (time tracking, links, objects)
+
 ### Pro-Tips for Workflows
 
 ### 📂 Folder Integration
