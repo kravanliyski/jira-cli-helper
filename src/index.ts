@@ -10,7 +10,12 @@ import {
   saveAlias,
   saveCreds,
   setAffectedFieldId,
+  saveCustomField,
+  removeCustomField,
+  getCustomFields,
 } from './config.js';
+import { selfUpdate } from './utils/selfUpdate.js';
+import { formatField } from './utils/formatField.js';
 import { getJiraClient } from './jiraClient.js';
 import { Version3Models } from 'jira.js';
 import {
@@ -19,14 +24,12 @@ import {
   formatTime,
   getStartDate,
   resolveKey,
-  selfUpdate,
-} from './utils.js';
+} from './utils/utils.js';
 
 const program = new Command();
 
 program.version('1.0.0').description('Jira CLI Helper');
 
-// --- TYPES ---
 interface JiraError {
   message?: string;
   response?: {
@@ -95,11 +98,45 @@ program
     try {
       const finalKey = resolveKey(issueKey);
       const client = getJiraClient();
-      const issue = await client.issues.getIssue({ issueIdOrKey: finalKey });
+
+      // 1. Load Custom Fields
+      const savedFields = getCustomFields();
+      const extraFieldIds = Object.values(savedFields);
+
+      // 2. Fetch standard + extra fields
+      const issue = await client.issues.getIssue({
+        issueIdOrKey: finalKey,
+        fields: ['summary', 'status', 'assignee', 'priority', ...extraFieldIds],
+      });
 
       console.log(chalk.green(`\nFound issue: ${issue.key}`));
       console.log(chalk.bold(issue.fields.summary));
-      console.log(`Status: [${issue.fields.status.name}]`);
+
+      // Standard Metadata Grid
+      console.log(
+        [
+          `Status: ${chalk.cyan(issue.fields.status.name)}`,
+          `Assignee: ${issue.fields.assignee ? issue.fields.assignee.displayName : 'Unassigned'}`,
+          `Priority: ${issue.fields.priority ? issue.fields.priority.name : 'None'}`,
+        ].join(chalk.gray(' | ')),
+      );
+
+      // 3. Render Custom Fields
+      if (Object.keys(savedFields).length > 0) {
+        console.log(chalk.gray('--- Details ---'));
+
+        // Cast fields to a generic Record so we can access dynamic keys safely
+        const fieldsMap = issue.fields as Record<string, unknown>;
+
+        Object.entries(savedFields).forEach(([alias, fieldId]) => {
+          const rawValue = fieldsMap[fieldId];
+
+          const displayValue = formatField(rawValue);
+
+          const label = (alias + ':').padEnd(15);
+          console.log(`${chalk.blue(label)} ${displayValue}`);
+        });
+      }
     } catch (error: unknown) {
       const err = error as JiraError;
       console.error(
@@ -411,29 +448,6 @@ program.command('config-field <id>').action((id: string) => {
   console.log('✅ Field ID saved.');
 });
 
-// --- SCAN COMMAND ---
-program
-  .command('scan <keyword>')
-  .description('Find field IDs')
-  .action(async (keyword: string) => {
-    try {
-      const client = getJiraClient();
-      console.log(chalk.blue(`Scanning for "${keyword}"...`));
-
-      const fields = await client.issueFields.getFields();
-
-      const matches = fields.filter(
-        (f) => f.name && f.name.toLowerCase().includes(keyword.toLowerCase()),
-      );
-
-      matches.forEach((f) =>
-        console.log(`${f.name} -> ID: ${f.id} (${f.schema?.type})`),
-      );
-    } catch (e: unknown) {
-      console.error(e);
-    }
-  });
-
 // --- 9. REPORT COMMAND ---
 program
   .command('report')
@@ -716,6 +730,64 @@ program
     } catch (error) {
       console.error(chalk.red('Update Error:'), error);
     }
+  });
+
+program
+  .command('scan <keyword>')
+  .description('Find field IDs to use with field:add')
+  .action(async (keyword: string) => {
+    try {
+      const client = getJiraClient();
+      console.log(chalk.blue(`Scanning for "${keyword}"...`));
+      const fields = await client.issueFields.getFields();
+      const matches = fields.filter(
+        (f) => f.name && f.name.toLowerCase().includes(keyword.toLowerCase()),
+      );
+
+      if (matches.length === 0) {
+        console.log(chalk.yellow('No fields found matching that keyword.'));
+        return;
+      }
+      matches.forEach((f) =>
+        console.log(
+          `${chalk.bold(f.name)} -> ID: ${chalk.cyan(f.id)} (${f.schema?.type || 'unknown'})`,
+        ),
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+program
+  .command('field:add <alias> <id>')
+  .description(
+    'Add a field to the info report (e.g. jira field:add Parent parent)',
+  )
+  .action((alias, id) => {
+    saveCustomField(alias, id);
+    console.log(chalk.green(`✅ Added field: "${alias}" maps to ID "${id}"`));
+  });
+
+program
+  .command('field:remove <alias>')
+  .description('Remove a field from the report')
+  .action((alias) => {
+    removeCustomField(alias);
+    console.log(chalk.green(`🗑️ Removed field: "${alias}"`));
+  });
+
+program
+  .command('field:list')
+  .description('List all saved custom fields')
+  .action(() => {
+    const fields = getCustomFields();
+    if (Object.keys(fields).length === 0) {
+      console.log(
+        chalk.yellow('No custom fields saved. Use "jira scan" to find IDs.'),
+      );
+      return;
+    }
+    console.table(fields);
   });
 
 program.parse(process.argv);

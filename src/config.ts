@@ -7,6 +7,7 @@ interface UserConfig {
   // New field: simple map of "short" -> "long"
   transitionAliases?: Record<string, string>;
   affectedFieldId?: string;
+  customFields?: Record<string, string>;
 }
 
 const config = new Conf<UserConfig>({
@@ -60,4 +61,20 @@ export const setAffectedFieldId = (id: string) => {
 
 export const getAffectedFieldId = () => {
   return config.get('affectedFieldId');
+};
+
+export const saveCustomField = (alias: string, id: string) => {
+  const current = config.get('customFields') || {};
+  current[alias] = id;
+  config.set('customFields', current);
+};
+
+export const removeCustomField = (alias: string) => {
+  const current = config.get('customFields') || {};
+  delete current[alias];
+  config.set('customFields', current);
+};
+
+export const getCustomFields = () => {
+  return config.get('customFields') || {};
 };
