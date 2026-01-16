@@ -1,7 +1,7 @@
 import { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { execSync } from 'child_process';
-import { selfUpdate } from './utils.js';
+import { selfUpdate } from '../selfUpdate.js';
 
 // Mock child_process so we don't actually run git/npm commands
 vi.mock('child_process', () => ({

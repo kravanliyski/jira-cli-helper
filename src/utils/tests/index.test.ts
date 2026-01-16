@@ -6,7 +6,7 @@ import {
   getIssueKeyFromBranch,
   getStartDate,
   resolveKey,
-} from './utils.js';
+} from '..//utils.js';
 
 // Mocking External Dependencies
 vi.mock('child_process', () => ({
@@ -172,7 +172,7 @@ describe('getStartDate', () => {
     vi.setSystemTime(new Date('2025-05-18T10:00:00Z'));
 
     const result = getStartDate({ week: true });
-    // Should go back to Monday, May 12
+    // Should go back to Tuesday, May 12
     expect(result.getDate()).toBe(12);
     expect(result.getMonth()).toBe(4);
   });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Version3Models } from 'jira.js';
-import { calculateTotalSeconds, formatTime } from './utils.js';
+import { calculateTotalSeconds, formatTime } from '../utils.js';
 
 describe('Time Reporting Logic', () => {
   const myId = 'user-123';
